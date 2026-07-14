@@ -31375,16 +31375,46 @@ var Http = class {
     for (const [k, v] of Object.entries(params ?? {})) {
       url.searchParams.set(k, String(v));
     }
-    return fetch(url, {
+    const send = () => fetch(url, {
       method,
       headers: { "content-type": "application/json", ...this.headers },
       body: body === void 0 ? void 0 : JSON.stringify(body),
       // Generous timeout: probe convergence runs model inference server-side.
       signal: AbortSignal.timeout(3e5)
     });
+    const retryable = method === "GET" || isCreatePost(method, path);
+    const maxAttempts = retryable ? 4 : 1;
+    let lastErr;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        const r = await send();
+        if (retryable && RETRYABLE_STATUS.has(r.status) && attempt < maxAttempts - 1) {
+          await sleep(backoff(attempt));
+          continue;
+        }
+        return r;
+      } catch (e) {
+        if (!isNetworkError(e))
+          throw e;
+        lastErr = e;
+        if (attempt < maxAttempts - 1)
+          await sleep(backoff(attempt));
+      }
+    }
+    throw lastErr;
   }
 };
 var sleep = (ms) => new Promise((res) => setTimeout(res, ms));
+var RETRYABLE_STATUS = /* @__PURE__ */ new Set([500, 502, 503, 504, 429, 529]);
+var backoff = (attempt) => 500 * 2 ** attempt + Math.floor(Math.random() * 250);
+function isNetworkError(e) {
+  return e instanceof TypeError || e instanceof Error && e.name === "TypeError";
+}
+function isCreatePost(method, path) {
+  if (method !== "POST")
+    return false;
+  return path === "/v1/sdk-sessions" || path === "/v1/rollouts" || path === "/v1/quality-checks";
+}
 var EventStream = class {
   http;
   path;
