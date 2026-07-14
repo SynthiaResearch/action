@@ -31897,6 +31897,29 @@ var Rollouts = class {
     return results;
   }
   /**
+   * Recover a turn post that failed transiently (a lost/timed-out connection,
+   * or a retryable 5xx), without risking a double-advance. Re-fetch the
+   * rollout: if its turn count moved past `priorTurn`, the write landed (only
+   * the response was lost) — adopt that state. If it's unchanged and still
+   * running, the write didn't land — it's safe to re-send once. A genuine 4xx
+   * (409 already-completed, 422 bad turn, 403 voice) is rethrown unchanged.
+   */
+  async #recoverTurn(rolloutId, priorTurn, body, original) {
+    const transient = original instanceof TypeError || original instanceof HttpError && RETRYABLE_STATUS.has(original.status);
+    if (!transient)
+      throw original;
+    let fetched;
+    try {
+      fetched = await this.#http.get(`/v1/rollouts/${rolloutId}`);
+    } catch {
+      throw original;
+    }
+    if (fetched.status !== "running" || fetched.turn > priorTurn) {
+      return fetched;
+    }
+    return this.#http.post(`/v1/rollouts/${rolloutId}/turns`, body);
+  }
+  /**
    * Start an async quality check over finished rollouts: the server
    * analyzes each rollout's agentic states in parallel and judges
    * whether the agent passed each scenario.
@@ -31930,10 +31953,13 @@ var Rollouts = class {
       } else {
         body["reply"] = reply;
       }
+      const priorTurn = session.turn;
       try {
         session = await this.#http.post(`/v1/rollouts/${session.id}/turns`, body);
       } catch (e) {
-        throw audioB64 !== null ? translateVoice403(e) : e;
+        if (audioB64 !== null)
+          throw translateVoice403(e);
+        session = await this.#recoverTurn(session.id, priorTurn, body, e);
       }
     }
     return {
