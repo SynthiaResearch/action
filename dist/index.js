@@ -32823,7 +32823,13 @@ function withDeadline(p, deadline, what) {
 function asInfra(e, redactor) {
   if (e instanceof InfraError || e instanceof ConfigError)
     return e;
-  const message = e instanceof Error ? e.message : String(e);
+  let message = e instanceof Error ? e.message : String(e);
+  let cause = e instanceof Error ? e.cause : void 0;
+  for (let depth = 0; cause && depth < 3; depth++) {
+    const detail = cause instanceof Error ? `${cause.code ?? cause.name}: ${cause.message}` : String(cause);
+    message += ` (${detail})`;
+    cause = cause instanceof Error ? cause.cause : void 0;
+  }
   return new InfraError(redactor.scrub(message));
 }
 
