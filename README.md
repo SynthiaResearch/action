@@ -110,3 +110,5 @@ synthia-research--synthia-api-web.modal.run:443
 - The env vars read by the bundled CLI: `SYNTHIA_API_KEY` (set from the
   `api-key` input), `SYNTHIA_BASE_URL`, and the standard non-secret
   `GITHUB_*` context. It never enumerates `process.env`.
+
+Full inventory of what the action reads, sends, and requires: [SECURITY.md](./SECURITY.md).

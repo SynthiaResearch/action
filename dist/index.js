@@ -31298,10 +31298,24 @@ var ToolSandbox = class _ToolSandbox {
       external: true
     });
   }
+  /**
+   * BYOE adversity: true exactly once for a tool this scenario plants a
+   * first-call fault on. Fail your real tool (return an error to your
+   * agent) and report(..., {isError: true}), so the scenario's adversity
+   * actually reaches an agent running its own environment.
+   */
+  shouldFail(name) {
+    if (this.failTools.has(name)) {
+      this.failTools.delete(name);
+      return true;
+    }
+    return false;
+  }
   call(name, toolInput) {
     const isError = this.failTools.has(name);
     let output;
     if (isError) {
+      this.failTools.delete(name);
       output = { error: `${name} is unavailable` };
     } else {
       const version = this.state["version"] ?? 0;
@@ -32661,6 +32675,8 @@ function renderSummary(report) {
       const name = s.title ?? s.scenario_id;
       const family = s.task_family ? ` [${s.task_family}]` : "";
       lines.push(`    ${s.passed}/${s.repeats}  ${name}${family}`);
+      if (s.top_issue)
+        lines.push(`         \u21B3 ${s.top_issue}`);
     }
   }
   lines.push("");
@@ -32764,9 +32780,14 @@ async function runCommand(flags = {}) {
     const { status, body } = await api.get(`/v1/account/runs/${qc.id}`);
     const rows = status === 200 ? body?.detail?.evaluations ?? body?.evaluations ?? [] : [];
     for (const row of rows) {
+      const known = scenarioMeta.get(row.scenario_id) ?? {};
+      const issues = row.judge?.issues;
+      const topIssue = !row.passed && Array.isArray(issues) && typeof issues[0] === "string" ? redactor.scrub(issues[0]).slice(0, 160) : void 0;
       scenarioMeta.set(row.scenario_id, {
-        task_family: row.task_family ?? void 0,
-        title: row.title ?? void 0
+        task_family: row.task_family ?? known.task_family ?? void 0,
+        title: row.title ?? known.title ?? void 0,
+        // keep the first failed rollout's finding; don't overwrite with later ones
+        top_issue: known.top_issue ?? topIssue
       });
     }
   } catch {
@@ -32860,12 +32881,12 @@ function renderComment(report) {
   const failing = report.scenarios.filter((s) => s.pass_rate < 1);
   if (failing.length) {
     lines.push("");
-    lines.push("| | Scenario | Family | Passed |");
-    lines.push("|---|---|---|---|");
+    lines.push("| | Scenario | Family | Passed | Judge's finding |");
+    lines.push("|---|---|---|---|---|");
     for (const s of failing.slice(0, 8)) {
       const name = s.title ?? s.scenario_id;
       lines.push(
-        `| ${s.passed === 0 ? "\u274C" : "\u26A0\uFE0F"} | ${escapeCell(name)} | ${s.task_family ?? "\u2014"} | ${s.passed}/${s.repeats} |`
+        `| ${s.passed === 0 ? "\u274C" : "\u26A0\uFE0F"} | ${escapeCell(name)} | ${s.task_family ?? "\u2014"} | ${s.passed}/${s.repeats} | ${s.top_issue ? escapeCell(s.top_issue) : "\u2014"} |`
       );
     }
   }
