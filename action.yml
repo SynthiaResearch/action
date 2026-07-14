@@ -26,10 +26,32 @@ inputs:
     description: "Post/update the PR comment on pull_request events."
     required: false
     default: "true"
+  warn-only:
+    description: >-
+      Advisory mode: still run and post the comment with scores and
+      regressions, but keep the check green (don't fail the PR on a failed
+      gate). Config/infra errors still fail. Use it to adopt Synthia
+      non-blocking before flipping it to a required check.
+    required: false
+    default: "false"
   github-token:
     description: "Token used to post the PR comment."
     required: false
     default: ${{ github.token }}
+  language:
+    description: >-
+      Eval runtime: 'node' (in-process JS/TS agent, default) or 'python'
+      (shells out to `python -m synthia`, which you installed via
+      `pip install synthiaresearch` in a prior step).
+    required: false
+    default: "node"
+  results-path:
+    description: >-
+      Where the python CLI writes / the action reads synthia-results.json
+      (passed to the CLI as --output; relative to working-directory).
+      Ignored for language: node.
+    required: false
+    default: "synthia-results.json"
 
 outputs:
   status:

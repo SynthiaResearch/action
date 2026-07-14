@@ -31,6 +31,13 @@ The action and the bundled CLI read exactly these, and never enumerate
 Your agent's own keys (e.g. `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`) are read by
 your agent code, not by this action.
 
+**`language: python`**: the action shells out to `python -m synthia` and passes
+its full environment to the subprocess (necessary so your agent sees its own
+keys). This is equivalent to the `node` path, where the in-process agent
+already runs with full `process.env`. The Python CLI applies the same env
+policy — it reads only `SYNTHIA_API_KEY`, `SYNTHIA_BASE_URL`, and the named
+`GITHUB_*` context vars, and never enumerates the environment.
+
 ## Network egress
 
 Outbound only. For a hardened runner (e.g. StepSecurity harden-runner

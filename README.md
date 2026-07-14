@@ -76,8 +76,30 @@ comment fresh):
 | `working-directory` | `.` | Directory containing the config and agent |
 | `comment` | `true` | Post/update the PR comment on `pull_request` events |
 | `github-token` | `${{ github.token }}` | Token for the PR comment |
+| `language` | `node` | Agent runtime: `node` (in-process JS/TS) or `python` |
+| `results-path` | `synthia-results.json` | Where the python CLI writes / the action reads results (python only) |
+| `warn-only` | `false` | Advisory mode: post the comment but keep the check green (don't block the PR on a failed gate) |
+
+### Adopting non-blocking first
+
+Set `warn-only: true` to run Synthia in advisory mode — every PR still gets the
+full comment with scores, baseline deltas, and named regressions, but the check
+stays green so it never blocks a merge (config/infra errors still fail). Once
+your suite and thresholds are calibrated, drop `warn-only` and, if you want it
+enforced, mark the check required in branch protection. The bare CLI has the
+same `--warn-only` flag.
 
 Outputs: `status` (`passed`/`failed`), `pass-rate`, `report-url`.
+
+### Python agents
+
+Set `language: python` and install the CLI from PyPI in a prior step
+(`pip install synthiaresearch`, analogous to `npm ci` for the node path). The
+action shells out to `python -m synthia run`, reads the results JSON it writes,
+and posts the identical PR comment. Your `agent.entrypoint` then points at a
+Python module exporting `agent(transcript, sandbox) -> reply`. See
+[docs/ci.md](https://github.com/SynthiaResearch/synthia/blob/main/docs/ci.md)
+for the full Python workflow.
 
 ## How it works
 
