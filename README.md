@@ -13,7 +13,7 @@ fetches** — the code that runs is exactly the code at the ref you pin.
 
 1. Add `SYNTHIA_API_KEY` to your repository's Actions secrets (plus whatever
    keys your agent itself needs, e.g. `ANTHROPIC_API_KEY`).
-2. Commit a `synthia.yaml` (see the [schema](https://github.com/SynthiaResearch/synthia/blob/main/packages/sdk-js/schema/synthia.schema.json)):
+2. Commit a `synthia.yaml` (see the [schema](../sdk-js/schema/synthia.schema.json)):
 
 ```yaml
 version: 1
@@ -45,10 +45,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
       - run: npm ci

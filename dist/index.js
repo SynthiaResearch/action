@@ -1,4 +1,4 @@
-import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);
+import { createRequire as __cr } from 'node:module'; const require = globalThis.require ?? __cr(import.meta.url);
 var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
