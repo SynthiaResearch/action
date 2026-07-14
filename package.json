@@ -1,0 +1,6 @@
+{
+  "name": "@synthiaresearch/action",
+  "private": true,
+  "type": "module",
+  "description": "GitHub Action for Synthia agent evals"
+}

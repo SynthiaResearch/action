@@ -1,0 +1,44 @@
+name: "Synthia Agent Evals"
+description: >-
+  Run Synthia agent evals against your repo's agent and gate the PR on pass
+  rate — scores, baseline deltas, and a hosted report link as a PR comment.
+author: "Synthia Research"
+branding:
+  icon: "check-circle"
+  color: "purple"
+
+inputs:
+  api-key:
+    description: "Synthia API key (store it in Actions secrets)."
+    required: true
+  config:
+    description: "Path to synthia.yaml, relative to working-directory."
+    required: false
+    default: "synthia.yaml"
+  fail-on-threshold:
+    description: "Override thresholds.pass_rate (0..1) for this run."
+    required: false
+  working-directory:
+    description: "Directory containing synthia.yaml and the agent."
+    required: false
+    default: "."
+  comment:
+    description: "Post/update the PR comment on pull_request events."
+    required: false
+    default: "true"
+  github-token:
+    description: "Token used to post the PR comment."
+    required: false
+    default: ${{ github.token }}
+
+outputs:
+  status:
+    description: "passed | failed"
+  pass-rate:
+    description: "Suite pass rate (0..1)."
+  report-url:
+    description: "Hosted run report."
+
+runs:
+  using: "node24"
+  main: "dist/index.js"
