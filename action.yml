@@ -52,6 +52,12 @@ inputs:
       Ignored for language: node.
     required: false
     default: "synthia-results.json"
+  session-suffix:
+    description: >-
+      Scope the CI session to ci/<repo>/<suffix> so multiple agent suites in
+      one repo (e.g. a JS and a Python agent) keep separate baseline lineages.
+    required: false
+    default: ""
 
 outputs:
   status:

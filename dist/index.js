@@ -32760,7 +32760,7 @@ async function runCommand(flags = {}) {
   }
   const baseUrl = process.env["SYNTHIA_BASE_URL"] ?? DEFAULT_BASE_URL;
   const ci = detectCi();
-  const session = ciSessionName(ci);
+  const session = ciSessionName(ci) + (flags.sessionSuffix ? `/${flags.sessionSuffix}` : "");
   const startedAt = /* @__PURE__ */ new Date();
   const deadline = startedAt.getTime() + config.run.timeout_minutes * 6e4;
   const client = new Synthia({
@@ -33007,14 +33007,16 @@ async function main() {
   const failOnThreshold = thresholdInput ? Number(thresholdInput) : void 0;
   const language = core.getInput("language") || "node";
   const warnOnly = core.getBooleanInput("warn-only");
+  const sessionSuffix = core.getInput("session-suffix") || void 0;
   let outcome;
   try {
     outcome = language === "python" ? await runPython(
       config,
       failOnThreshold,
       warnOnly,
+      sessionSuffix,
       core.getInput("results-path") || "synthia-results.json"
-    ) : await runCommand({ config, failOnThreshold, warnOnly });
+    ) : await runCommand({ config, failOnThreshold, warnOnly, sessionSuffix });
   } catch (e) {
     core.setFailed(e instanceof Error ? e.message : String(e));
     return;
@@ -33036,7 +33038,7 @@ async function main() {
     );
   }
 }
-async function runPython(config, failOnThreshold, warnOnly, resultsPath) {
+async function runPython(config, failOnThreshold, warnOnly, sessionSuffix, resultsPath) {
   const args = [
     "-m",
     "synthia",
@@ -33046,7 +33048,8 @@ async function runPython(config, failOnThreshold, warnOnly, resultsPath) {
     "--output",
     resultsPath,
     ...failOnThreshold != null ? ["--fail-on-threshold", String(failOnThreshold)] : [],
-    ...warnOnly ? ["--warn-only"] : []
+    ...warnOnly ? ["--warn-only"] : [],
+    ...sessionSuffix ? ["--session-suffix", sessionSuffix] : []
   ];
   const { code, stderrTail } = await new Promise((res, rej) => {
     const child = spawn("python", args, {
