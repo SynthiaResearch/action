@@ -1,0 +1,20 @@
+{
+  // Self-contained (no monorepo "extends"): this file lives at the repo
+  // ROOT in the public synthia-action mirror, where ../../ escapes the repo.
+  // Keep the shared options in sync with tsconfig.base.json.
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "types": ["node"]
+  },
+  "include": ["src"]
+}

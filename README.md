@@ -13,7 +13,7 @@ fetches** — the code that runs is exactly the code at the ref you pin.
 
 1. Add `SYNTHIA_API_KEY` to your repository's Actions secrets (plus whatever
    keys your agent itself needs, e.g. `ANTHROPIC_API_KEY`).
-2. Commit a `synthia.yaml` (see the [schema](../sdk-js/schema/synthia.schema.json)):
+2. Commit a `synthia.yaml` (see the [full reference](https://github.com/SynthiaResearch/synthia-sdk/blob/main/docs/reference/configuration.md)):
 
 ```yaml
 version: 1
@@ -52,7 +52,7 @@ jobs:
         with:
           node-version: 24
       - run: npm ci
-      - uses: SynthiaResearch/action@v1
+      - uses: SynthiaResearch/synthia-action@v1
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}  # your agent's own keys
         with:
@@ -63,7 +63,7 @@ Pin by SHA if your organization requires it (Dependabot/Renovate keep the
 comment fresh):
 
 ```yaml
-      - uses: SynthiaResearch/action@<commit-sha>  # v1
+      - uses: SynthiaResearch/synthia-action@<commit-sha>  # v1
 ```
 
 ## Inputs
@@ -98,7 +98,7 @@ Set `language: python` and install the CLI from PyPI in a prior step
 action shells out to `python -m synthia run`, reads the results JSON it writes,
 and posts the identical PR comment. Your `agent.entrypoint` then points at a
 Python module exporting `agent(transcript, sandbox) -> reply`. See
-[docs/ci.md](https://github.com/SynthiaResearch/synthia/blob/main/docs/ci.md)
+[docs/ci.md](https://github.com/SynthiaResearch/synthia-sdk/blob/main/docs/ci.md)
 for the full Python workflow.
 
 ## How it works

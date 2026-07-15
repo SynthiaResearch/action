@@ -1,6 +1,21 @@
 {
   "name": "@synthiaresearch/action",
   "private": true,
+  "version": "0.1.0",
+  "description": "GitHub Action for Synthia agent evals — bundled JS, no runtime registry fetch",
   "type": "module",
-  "description": "GitHub Action for Synthia agent evals"
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "npm run typecheck && esbuild src/main.ts --bundle --platform=node --target=node24 --format=esm --outfile=dist/index.js --banner:js=\"import { createRequire as __cr } from 'node:module'; const require = globalThis.require ?? __cr(import.meta.url);\""
+  },
+  "dependencies": {
+    "@actions/core": "^1.11.0",
+    "@actions/github": "^6.0.0",
+    "synthiaresearch": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.5.0"
+  }
 }
