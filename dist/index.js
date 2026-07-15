@@ -31225,7 +31225,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
 import { basename, dirname, extname, resolve } from "node:path";
 var DEFAULT_BASE_URL = "https://synthia-research--synthia-api-web.modal.run";
-var SDK_VERSION = "0.0.7";
+var SDK_VERSION = "0.0.11";
 var AUDIO_SUFFIXES = /* @__PURE__ */ new Set([".wav", ".mp3", ".m4a", ".ogg", ".flac", ".webm"]);
 function asAudioB64(value) {
   if (value instanceof Uint8Array)
@@ -31431,7 +31431,9 @@ var EventStream = class {
   async pump() {
     if (!this.enabled)
       return;
-    const body = await this.http.get(this.path, { after: this.#after });
+    const body = await this.http.get(this.path, {
+      after: this.#after
+    });
     for (const event of body.data) {
       this.#after = event.seq;
       const detail = Object.entries(event.data).map(([k, v]) => `${k}=${v}`).join(" ");
@@ -31456,12 +31458,12 @@ var ValidationRun = class {
     this.dataset_id = data.dataset_id;
     this.status = data.status;
     this.label = data.label ?? null;
-    this.verdict = data.verdict;
-    this.reference = data.reference;
-    this.validity = data.validity;
-    this.fidelity = data.fidelity;
-    this.diversity = data.diversity;
-    this.error = data.error;
+    this.verdict = data.verdict ?? null;
+    this.reference = data.reference ?? null;
+    this.validity = data.validity ?? null;
+    this.fidelity = data.fidelity ?? null;
+    this.diversity = data.diversity ?? null;
+    this.error = data.error ?? null;
     this.#http = http;
   }
   /** Poll until validation finishes; verbose prints server telemetry. */
@@ -31476,12 +31478,12 @@ var ValidationRun = class {
       await sleep(pollInterval * 1e3);
       const data = await this.#http.get(`/v1/validation-runs/${this.id}`);
       this.status = data.status;
-      this.verdict = data.verdict;
-      this.reference = data.reference;
-      this.validity = data.validity;
-      this.fidelity = data.fidelity;
-      this.diversity = data.diversity;
-      this.error = data.error;
+      this.verdict = data.verdict ?? null;
+      this.reference = data.reference ?? null;
+      this.validity = data.validity ?? null;
+      this.fidelity = data.fidelity ?? null;
+      this.diversity = data.diversity ?? null;
+      this.error = data.error ?? null;
       await events.pump();
     }
     await events.pump();
@@ -31539,8 +31541,8 @@ var GenerationJob = class {
     this.status = data.status;
     this.user_model_id = data.user_model_id;
     this.count = data.count;
-    this.dataset_id = data.dataset_id;
-    this.error = data.error;
+    this.dataset_id = data.dataset_id ?? null;
+    this.error = data.error ?? null;
     this.#http = http;
   }
   /** Poll until the job finishes; verbose prints server telemetry live. */
@@ -31555,8 +31557,8 @@ var GenerationJob = class {
       await sleep(pollInterval * 1e3);
       const data2 = await this.#http.get(`/v1/generations/${this.id}`);
       this.status = data2.status;
-      this.dataset_id = data2.dataset_id;
-      this.error = data2.error;
+      this.dataset_id = data2.dataset_id ?? null;
+      this.error = data2.error ?? null;
       await events.pump();
     }
     await events.pump();
@@ -31620,9 +31622,7 @@ var UserModels = class {
    */
   async createFromProbe(agent, opts = {}) {
     const { maxTurns = 10, verbose = false } = opts;
-    let session = await this.#http.post("/v1/probe-sessions", {
-      max_turns: maxTurns
-    });
+    let session = await this.#http.post("/v1/probe-sessions", { max_turns: maxTurns });
     const events = new EventStream(this.#http, `/v1/probe-sessions/${session.id}/events`, verbose);
     while (session.status === "active") {
       const raw = await agent(session.next_probe);
@@ -31644,7 +31644,10 @@ var UserModels = class {
   async list(session) {
     const params = session ? { sdk_session: session } : void 0;
     const body = await this.#http.get("/v1/user-models", params);
-    return body.data;
+    return body.data.map((m) => ({
+      ...m,
+      representation_id: m.representation_id ?? null
+    }));
   }
 };
 var Datasets = class {
@@ -31691,7 +31694,7 @@ var QualityCheck = class {
     this.status = data.status;
     this.rollout_ids = data.rollout_ids;
     this.label = data.label ?? null;
-    this.error = data.error;
+    this.error = data.error ?? null;
     this.#http = http;
   }
   /** Poll until the check finishes; verbose prints server telemetry. */
@@ -31706,7 +31709,7 @@ var QualityCheck = class {
       await sleep(pollInterval * 1e3);
       const data = await this.#http.get(`/v1/quality-checks/${this.id}`);
       this.status = data.status;
-      this.error = data.error;
+      this.error = data.error ?? null;
       await events.pump();
     }
     await events.pump();
@@ -31738,13 +31741,13 @@ var VoiceRender = class {
   constructor(data, http) {
     this.id = data.id;
     this.status = data.status;
-    this.scenario_id = data.scenario_id;
-    this.rollout_id = data.rollout_id;
-    this.params = data.params;
-    this.duration_ms = data.duration_ms;
-    this.wpm = data.wpm;
-    this.provenance = data.provenance;
-    this.error = data.error;
+    this.scenario_id = data.scenario_id ?? null;
+    this.rollout_id = data.rollout_id ?? null;
+    this.params = data.params ?? {};
+    this.duration_ms = data.duration_ms ?? null;
+    this.wpm = data.wpm ?? null;
+    this.provenance = data.provenance ?? null;
+    this.error = data.error ?? null;
     this.#http = http;
   }
   /** Poll until the render finishes; verbose prints server telemetry
@@ -31760,11 +31763,11 @@ var VoiceRender = class {
       await sleep(pollInterval * 1e3);
       const data = await this.#http.get(`/v1/voice-renders/${this.id}`);
       this.status = data.status;
-      this.params = data.params;
-      this.duration_ms = data.duration_ms;
-      this.wpm = data.wpm;
-      this.provenance = data.provenance;
-      this.error = data.error;
+      this.params = data.params ?? {};
+      this.duration_ms = data.duration_ms ?? null;
+      this.wpm = data.wpm ?? null;
+      this.provenance = data.provenance ?? null;
+      this.error = data.error ?? null;
       await events.pump();
     }
     await events.pump();
@@ -31929,10 +31932,7 @@ var Rollouts = class {
    */
   async qualityCheck(rollouts, label) {
     const rolloutIds = rollouts.map((r) => typeof r === "string" ? r : r.rollout_id);
-    const data = await this.#http.post("/v1/quality-checks", {
-      rollout_ids: rolloutIds,
-      label: label ?? null
-    });
+    const data = await this.#http.post("/v1/quality-checks", { rollout_ids: rolloutIds, label: label ?? null });
     return new QualityCheck(data, this.#http);
   }
   /** Run one rollout session; one HTTP round-trip per agent turn. */
@@ -31975,6 +31975,16 @@ var Rollouts = class {
     };
   }
 };
+function probeFromRollout(agent) {
+  return async (probe) => {
+    const sandbox = new ToolSandbox(0);
+    const reply = await agent([{ role: "user", content: probe }], sandbox);
+    if (typeof reply !== "string") {
+      throw new Error("probing needs a text reply \u2014 pass probeAgent for audio agents");
+    }
+    return { reply, tool_calls: sandbox.events };
+  };
+}
 var Synthia = class {
   sessionName;
   sessionId = null;
@@ -32028,14 +32038,24 @@ var Synthia = class {
    * this invocation; all later requests carry both ids as headers.
    */
   async #startSession() {
-    let r;
-    try {
-      r = await this.#http.raw("POST", "/v1/sdk-sessions", {
-        name: this.sessionName,
-        sdk_version: SDK_VERSION,
-        ...this.#ci ? { ci: this.#ci } : {}
-      });
-    } catch {
+    let r = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        r = await this.#http.raw("POST", "/v1/sdk-sessions", {
+          name: this.sessionName,
+          sdk_version: SDK_VERSION,
+          ...this.#ci ? { ci: this.#ci } : {}
+        });
+      } catch {
+        r = null;
+      }
+      if (r && r.status < 500)
+        break;
+      if (attempt < 2) {
+        await new Promise((res) => setTimeout(res, 2e3 * (attempt + 1)));
+      }
+    }
+    if (!r || r.status >= 500) {
       return;
     }
     if (r.status === 404)
@@ -32108,6 +32128,50 @@ var Synthia = class {
     }
     return result;
   }
+  /**
+   * The whole evaluation in one call: prepare (probe + generate, or
+   * reuse) → roll out every scenario against `agent` → judge the
+   * rollouts → return the judged results. The script-path equivalent of
+   * `synthia run`, minus the CI gating: thresholds, exit codes, and
+   * report files stay yours.
+   */
+  async run(agent, opts = {}) {
+    const { count = 20, dataset, probeAgent, maxTurns = 12, probeMaxTurns = 10, concurrency = 4, repeats = 1, minSuccessRate = 0.6, maxSuccessRate = 0.9, label, agentMeta, verbose = false } = opts;
+    let prepare = null;
+    let target;
+    if (dataset !== void 0) {
+      target = typeof dataset === "string" ? await this.datasets.get(dataset) : dataset;
+    } else {
+      prepare = await this.prepare(probeAgent ?? probeFromRollout(agent), {
+        count,
+        maxTurns: probeMaxTurns,
+        minSuccessRate,
+        maxSuccessRate,
+        verbose
+      });
+      target = prepare.dataset;
+    }
+    const results = [];
+    for (let i = 0; i < repeats; i++) {
+      results.push(...await this.rollouts.run(agent, target, {
+        maxTurns,
+        concurrency,
+        agentMeta
+      }));
+    }
+    const qualityCheck = await this.rollouts.qualityCheck(results, label);
+    await qualityCheck.wait({ verbose });
+    const evaluations = await qualityCheck.rollouts();
+    const passed = evaluations.filter((e) => e.passed).length;
+    return {
+      prepare,
+      dataset: target,
+      results,
+      qualityCheck,
+      evaluations,
+      passRate: evaluations.length ? passed / evaluations.length : null
+    };
+  }
   async #prepare(agent, opts) {
     const { count = 20, maxTurns = 10, minSuccessRate = 0.6, maxSuccessRate = 0.9, verbose = false } = opts;
     await this.#http.ready;
@@ -32133,7 +32197,7 @@ var Synthia = class {
         verbose,
         reason: `success rate ${pct(rate)} ${direction} ${pct(bound)}; regenerating calibrated on ${latest.id}`,
         successRate: rate,
-        qualityCheckId: latest.id
+        qualityCheckId: latest.id ?? null
       });
     }
     if (existing[0].row_count !== count) {
@@ -32918,14 +32982,15 @@ function asInfra(e, redactor) {
 }
 
 // src/comment.ts
-var COMMENT_MARKER = "<!-- synthia-ci-report -->";
+var commentMarker = (sessionSuffix) => sessionSuffix ? `<!-- synthia-ci-report:${sessionSuffix} -->` : "<!-- synthia-ci-report -->";
 var pct3 = (x) => `${(x * 100).toFixed(1)}%`;
 var pp = (x) => `${x >= 0 ? "+" : ""}${(x * 100).toFixed(1)}pp`;
-function renderComment(report, advisory = false) {
-  const lines = [COMMENT_MARKER];
+function renderComment(report, advisory = false, sessionSuffix) {
+  const lines = [commentMarker(sessionSuffix)];
   const icon = report.status === "passed" ? "\u2705" : "\u274C";
   const b = report.baseline;
-  lines.push(`## ${icon} Synthia evals: ${report.status}`);
+  const suite = sessionSuffix ? ` (${sessionSuffix})` : "";
+  lines.push(`## ${icon} Synthia evals${suite}: ${report.status}`);
   if (advisory && report.status !== "passed") {
     lines.push("");
     lines.push("_Advisory (warn-only): reported but not blocking this PR._");
@@ -33026,10 +33091,10 @@ async function main() {
     core.setOutput("status", report.status);
     core.setOutput("pass-rate", report.totals.pass_rate);
     core.setOutput("report-url", report.report_url);
-    const body = renderComment(report, warnOnly);
+    const body = renderComment(report, warnOnly, sessionSuffix);
     await core.summary.addRaw(body).write();
     if (core.getBooleanInput("comment") && github.context.eventName === "pull_request") {
-      await upsertComment(body);
+      await upsertComment(body, commentMarker(sessionSuffix));
     }
   }
   if (outcome.exitCode !== 0) {
@@ -33084,7 +33149,7 @@ function isRunReport(v) {
   const r = v;
   return (r["status"] === "passed" || r["status"] === "failed") && typeof r["totals"] === "object" && r["totals"] !== null && typeof r["thresholds"] === "object" && r["thresholds"] !== null && Array.isArray(r["scenarios"]) && typeof r["config"] === "object" && r["config"] !== null && typeof r["report_url"] === "string";
 }
-async function upsertComment(body) {
+async function upsertComment(body, marker) {
   const token = core.getInput("github-token");
   if (!token) {
     core.warning("no github-token available \u2014 skipping PR comment");
@@ -33101,7 +33166,7 @@ async function upsertComment(body) {
       issue_number,
       per_page: 100
     });
-    const existing = comments.find((c) => c.body?.includes(COMMENT_MARKER));
+    const existing = comments.find((c) => c.body?.includes(marker));
     if (existing) {
       await octokit.rest.issues.updateComment({
         owner,

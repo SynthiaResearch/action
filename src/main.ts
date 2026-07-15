@@ -18,7 +18,7 @@ import * as core from "@actions/core";
 import * as github from "@actions/github";
 
 import { runCommand, type RunOutcome, type RunReport } from "synthiaresearch/ci";
-import { COMMENT_MARKER, renderComment } from "./comment.js";
+import { commentMarker, renderComment } from "./comment.js";
 
 async function main(): Promise<void> {
   const apiKey = core.getInput("api-key", { required: true });
@@ -57,13 +57,13 @@ async function main(): Promise<void> {
     core.setOutput("pass-rate", report.totals.pass_rate);
     core.setOutput("report-url", report.report_url);
 
-    const body = renderComment(report, warnOnly);
+    const body = renderComment(report, warnOnly, sessionSuffix);
     await core.summary.addRaw(body).write();
     if (
       core.getBooleanInput("comment") &&
       github.context.eventName === "pull_request"
     ) {
-      await upsertComment(body);
+      await upsertComment(body, commentMarker(sessionSuffix));
     }
   }
 
@@ -154,7 +154,7 @@ function isRunReport(v: unknown): v is RunReport {
 }
 
 /** Update the existing Synthia comment (found by marker) or create one. */
-async function upsertComment(body: string): Promise<void> {
+async function upsertComment(body: string, marker: string): Promise<void> {
   const token = core.getInput("github-token");
   if (!token) {
     core.warning("no github-token available — skipping PR comment");
@@ -172,7 +172,7 @@ async function upsertComment(body: string): Promise<void> {
       issue_number,
       per_page: 100,
     });
-    const existing = comments.find((c) => c.body?.includes(COMMENT_MARKER));
+    const existing = comments.find((c) => c.body?.includes(marker));
     if (existing) {
       await octokit.rest.issues.updateComment({
         owner,

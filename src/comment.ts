@@ -1,7 +1,12 @@
 import type { RunReport } from "synthiaresearch/ci";
 
-/** Hidden marker so re-runs update one comment instead of stacking new ones. */
-export const COMMENT_MARKER = "<!-- synthia-ci-report -->";
+/** Hidden marker so re-runs update one comment instead of stacking new ones.
+ * Scoped by session-suffix: each suite in a multi-agent repo owns its own
+ * comment — otherwise the last suite to finish overwrites the others'. */
+export const commentMarker = (sessionSuffix?: string) =>
+  sessionSuffix
+    ? `<!-- synthia-ci-report:${sessionSuffix} -->`
+    : "<!-- synthia-ci-report -->";
 
 const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
 const pp = (x: number) => `${x >= 0 ? "+" : ""}${(x * 100).toFixed(1)}pp`;
@@ -11,12 +16,17 @@ const pp = (x: number) => `${x >= 0 ? "+" : ""}${(x * 100).toFixed(1)}pp`;
  * config drift vs the baseline run, warnings, and the hosted report link.
  * Everything here comes from the results report — never transcripts.
  */
-export function renderComment(report: RunReport, advisory = false): string {
-  const lines: string[] = [COMMENT_MARKER];
+export function renderComment(
+  report: RunReport,
+  advisory = false,
+  sessionSuffix?: string,
+): string {
+  const lines: string[] = [commentMarker(sessionSuffix)];
   const icon = report.status === "passed" ? "✅" : "❌";
   const b = report.baseline;
 
-  lines.push(`## ${icon} Synthia evals: ${report.status}`);
+  const suite = sessionSuffix ? ` (${sessionSuffix})` : "";
+  lines.push(`## ${icon} Synthia evals${suite}: ${report.status}`);
   if (advisory && report.status !== "passed") {
     lines.push("");
     lines.push("_Advisory (warn-only): reported but not blocking this PR._");
