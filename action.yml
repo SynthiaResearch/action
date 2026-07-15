@@ -9,8 +9,11 @@ branding:
 
 inputs:
   api-key:
-    description: "Synthia API key (store it in Actions secrets)."
-    required: true
+    description: >-
+      Synthia API key (store it in Actions secrets). When empty — e.g. a fork
+      PR, where secrets don't flow — the action skips with a notice and a
+      green check instead of failing.
+    required: false
   config:
     description: "Path to synthia.yaml, relative to working-directory."
     required: false
@@ -61,7 +64,7 @@ inputs:
 
 outputs:
   status:
-    description: "passed | failed"
+    description: "passed | failed | skipped (no api-key available)"
   pass-rate:
     description: "Suite pass rate (0..1)."
   report-url:

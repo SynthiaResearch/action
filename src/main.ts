@@ -21,7 +21,20 @@ import { runCommand, type RunOutcome, type RunReport } from "synthiaresearch/ci"
 import { commentMarker, renderComment } from "./comment.js";
 
 async function main(): Promise<void> {
-  const apiKey = core.getInput("api-key", { required: true });
+  const apiKey = core.getInput("api-key");
+  if (!apiKey) {
+    // Fork PRs never receive secrets — skip green instead of failing, so the
+    // recommended workflow needs no secret-presence gate step.
+    const msg =
+      "no api-key available (fork PR, or the SYNTHIA_API_KEY secret is not " +
+      "configured) — skipping Synthia evals";
+    core.notice(msg);
+    await core.summary
+      .addRaw(`### Synthia evals skipped\n\n${msg}\n`)
+      .write();
+    core.setOutput("status", "skipped");
+    return;
+  }
   core.setSecret(apiKey);
   process.env["SYNTHIA_API_KEY"] = apiKey;
 
@@ -64,6 +77,16 @@ async function main(): Promise<void> {
       github.context.eventName === "pull_request"
     ) {
       await upsertComment(body, commentMarker(sessionSuffix));
+    }
+
+    // Advisory mode keeps the check green, which makes a failed gate invisible
+    // in the checks UI — surface it as a yellow annotation instead.
+    if (warnOnly && report.status === "failed") {
+      core.warning(
+        `Synthia gate failed (pass rate ` +
+          `${(report.totals.pass_rate * 100).toFixed(1)}%) — advisory ` +
+          `(warn-only), not blocking: ${report.report_url}`,
+      );
     }
   }
 

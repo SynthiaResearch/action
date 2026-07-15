@@ -19745,10 +19745,10 @@ Support boolean input list: \`true | True | TRUE | false | False | FALSE\``);
       (0, command_1.issueCommand)("warning", (0, utils_1.toCommandProperties)(properties), message instanceof Error ? message.toString() : message);
     }
     exports.warning = warning2;
-    function notice(message, properties = {}) {
+    function notice2(message, properties = {}) {
       (0, command_1.issueCommand)("notice", (0, utils_1.toCommandProperties)(properties), message instanceof Error ? message.toString() : message);
     }
-    exports.notice = notice;
+    exports.notice = notice2;
     function info(message) {
       process.stdout.write(message + os.EOL);
     }
@@ -33060,7 +33060,17 @@ var escapeCell = (s) => s.replace(/\|/g, "\\|");
 
 // src/main.ts
 async function main() {
-  const apiKey = core.getInput("api-key", { required: true });
+  const apiKey = core.getInput("api-key");
+  if (!apiKey) {
+    const msg = "no api-key available (fork PR, or the SYNTHIA_API_KEY secret is not configured) \u2014 skipping Synthia evals";
+    core.notice(msg);
+    await core.summary.addRaw(`### Synthia evals skipped
+
+${msg}
+`).write();
+    core.setOutput("status", "skipped");
+    return;
+  }
   core.setSecret(apiKey);
   process.env["SYNTHIA_API_KEY"] = apiKey;
   const workingDirectory = core.getInput("working-directory");
@@ -33095,6 +33105,11 @@ async function main() {
     await core.summary.addRaw(body).write();
     if (core.getBooleanInput("comment") && github.context.eventName === "pull_request") {
       await upsertComment(body, commentMarker(sessionSuffix));
+    }
+    if (warnOnly && report.status === "failed") {
+      core.warning(
+        `Synthia gate failed (pass rate ${(report.totals.pass_rate * 100).toFixed(1)}%) \u2014 advisory (warn-only), not blocking: ${report.report_url}`
+      );
     }
   }
   if (outcome.exitCode !== 0) {

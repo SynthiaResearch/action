@@ -33,12 +33,18 @@ baseline:
 name: synthia
 on:
   pull_request:            # never pull_request_target — see Security
+    # paths: ["src/**", "synthia.yaml"]  # optional: only run when the agent changes
   push:
     branches: [main]       # runs on main seed the baseline for PR deltas
 
 permissions:
   contents: read
   pull-requests: write     # only for the PR comment; drop if comment: false
+
+# Evals are metered — cancel superseded runs instead of paying for stale pushes
+concurrency:
+  group: synthia-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   evals:
@@ -58,6 +64,7 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}  # your agent's own keys
         with:
           api-key: ${{ secrets.SYNTHIA_API_KEY }}
+          warn-only: true      # advisory while calibrating — remove to enforce the gate
 ```
 
 Pin by SHA if your organization requires it (Dependabot/Renovate keep the
@@ -71,7 +78,7 @@ comment fresh):
 
 | Input | Default | Purpose |
 |---|---|---|
-| `api-key` | — (required) | Synthia API key, from Actions secrets |
+| `api-key` | — | Synthia API key, from Actions secrets. Empty (e.g. fork PRs) → the run is skipped with a notice, not failed |
 | `config` | `synthia.yaml` | Config path, relative to `working-directory` |
 | `fail-on-threshold` | — | Override `thresholds.pass_rate` for this run |
 | `working-directory` | `.` | Directory containing the config and agent |
@@ -83,14 +90,20 @@ comment fresh):
 
 ### Adopting non-blocking first
 
-Set `warn-only: true` to run Synthia in advisory mode — every PR still gets the
-full comment with scores, baseline deltas, and named regressions, but the check
-stays green so it never blocks a merge (config/infra errors still fail). Once
-your suite and thresholds are calibrated, drop `warn-only` and, if you want it
-enforced, mark the check required in branch protection. The bare CLI has the
-same `--warn-only` flag.
+The quickstart above sets `warn-only: true`: Synthia runs in advisory mode —
+every PR still gets the full comment with scores, baseline deltas, and named
+regressions, but the check stays green so it never blocks a merge (config/infra
+errors still fail). Once your suite and thresholds are calibrated, drop
+`warn-only` and, if you want it enforced, mark the check required in branch
+protection. The bare CLI has the same `--warn-only` flag.
 
-Outputs: `status` (`passed`/`failed`), `pass-rate`, `report-url`.
+Outputs: `status` (`passed`/`failed`/`skipped`), `pass-rate`, `report-url`.
+
+Every run also writes the scores table to the workflow **job summary**, so
+results are visible on `push` baseline runs, with `comment: false`, and on
+fork PRs where the comment can't be posted. In advisory mode a failed gate
+additionally emits a `::warning::` annotation, so it shows up in the checks
+UI without failing the check.
 
 ### Python agents
 
