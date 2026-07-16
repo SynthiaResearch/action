@@ -12,7 +12,7 @@ fetches** — the code that runs is exactly the code at the ref you pin.
 ## Quickstart
 
 1. Add `SYNTHIA_API_KEY` to your repository's Actions secrets (plus whatever
-   keys your agent itself needs, e.g. `ANTHROPIC_API_KEY`).
+   keys your agent itself needs, e.g. `OPENAI_API_KEY`).
 2. Commit a `synthia.yaml` (see the [full reference](https://github.com/SynthiaResearch/synthia-sdk/blob/main/docs/reference/configuration.md)):
 
 ```yaml
@@ -61,7 +61,7 @@ jobs:
       - run: npm ci
       - uses: SynthiaResearch/synthia-action@v1
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}  # your agent's own keys
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}   # your agent's own keys
         with:
           api-key: ${{ secrets.SYNTHIA_API_KEY }}
           warn-only: true      # advisory while calibrating — remove to enforce the gate
@@ -142,7 +142,7 @@ were evaluated, or when the drop vs baseline exceeds `baseline.max_regression`
 synthia-research--synthia-api-web.modal.run:443
 ```
 
-  plus whatever hosts your agent itself calls (e.g. `api.anthropic.com:443`).
+  plus whatever hosts your agent itself calls (e.g. `api.openai.com:443`).
 - The env vars read by the bundled CLI: `SYNTHIA_API_KEY` (set from the
   `api-key` input), `SYNTHIA_BASE_URL`, and the standard non-secret
   `GITHUB_*` context. It never enumerates `process.env`.

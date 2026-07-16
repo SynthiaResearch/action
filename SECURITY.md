@@ -28,7 +28,7 @@ The action and the bundled CLI read exactly these, and never enumerate
 | `SYNTHIA_BASE_URL` | Optional API host override. |
 | `GITHUB_ACTIONS`, `GITHUB_REPOSITORY`, `GITHUB_SHA`, `GITHUB_REF_NAME`, `GITHUB_HEAD_REF`, `GITHUB_EVENT_NAME`, `GITHUB_RUN_ID`, `GITHUB_SERVER_URL` | Non-secret CI provenance recorded on the run (commit, branch, PR number). |
 
-Your agent's own keys (e.g. `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`) are read by
+Your agent's own keys (e.g. `OPENAI_API_KEY`) are read by
 your agent code, not by this action.
 
 **`language: python`**: the action shells out to `python -m synthia` and passes
