@@ -5,7 +5,7 @@ be auditable and minimal. This document inventories exactly what it does.
 
 ## Reporting a vulnerability
 
-Email **security@synthia.dev** with details and a reproduction. We aim to
+Email **security@synthiaresearch.com** with details and a reproduction. We aim to
 acknowledge within 2 business days. Please do not open a public issue for
 undisclosed vulnerabilities.
 
